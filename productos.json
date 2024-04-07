@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "title": "Actualizamos Titulo de Id 1 V2",
+    "description": "Descripción del producto 1",
+    "price": 15.99,
+    "thumbnail": "thumbnail1.jpg",
+    "code": "001",
+    "stock": 100
+  },
+  {
+    "id": 2,
+    "title": "Producto 2",
+    "description": "Descripción del producto 2",
+    "price": 20.49,
+    "thumbnail": "thumbnail2.jpg",
+    "code": "002",
+    "stock": 50
+  }
+]

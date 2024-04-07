@@ -1,20 +1,19 @@
+const fs = require('fs');
+
 class ProductManager {
     constructor() {
         this.products = [];
         this.productIdCounter = 1;
     }
 
-
     addProduct(title, description, price, thumbnail, code, stock) {
-
         if (!title || !description || !price || !thumbnail || !code || !stock) {
             console.log("Todos los campos son obligatorios.");
             return;
         }
 
-
         if (this.products.some(product => product.code === code)) {
-            console.log(`No puedes agregar código (${code}) porque  ya existe.`);
+            console.log(`No puedes agregar código (${code}) porque ya existe.`);
             return;
         }
 
@@ -29,15 +28,13 @@ class ProductManager {
         };
         this.products.push(product);
 
-
-        console.log(`Se agrago el Producto con  ID-${product.id} exitosamente `);
+        console.log(`Se agregó el Producto con ID-${product.id} exitosamente.`);
+        this.saveProductsToFile();
     }
-
 
     findProductByCode(code) {
         return this.products.find(product => product.code === code);
     }
-
 
     getAllProducts() {
         const productsInfo = this.products.map(product => {
@@ -51,10 +48,47 @@ class ProductManager {
                 stock: product.stock
             };
         });
-    
+
         return productsInfo;
     }
+
+    updateProduct(id, updatedFields) {
+        const productToUpdate = this.products.find(product => product.id === id);
+        if (!productToUpdate) {
+            console.log(`No se encontró ningún producto con ID-${id}.`);
+            return;
+        }
+
+      
+        Object.assign(productToUpdate, updatedFields);
+
+        this.saveProductsToFile();
+
+        console.log(`Producto con ID-${id} actualizado exitosamente.`);
+    }
+
+    deleteProduct(id) {
+        const index = this.products.findIndex(product => product.id === id);
+        if (index === -1) {
+            console.log(`No se encontró ningún producto con ID-${id}.`);
+            return;
+        }
+
+        
+        this.products.splice(index, 1);
+
+        this.saveProductsToFile();
+
+        console.log(`Producto con ID-${id} eliminado exitosamente.`);
+    }
+
+    saveProductsToFile(filePath = 'productos.json') {
+        const data = JSON.stringify(this.products, null, 2);
+        fs.writeFileSync(filePath, data);
+        console.log(`Productos guardados en el archivo ${filePath}.`);
+    }
 }
+
 
 // testeamos el Funcionamiento 
 const productManager = new ProductManager();
@@ -86,3 +120,13 @@ if (productFound) {
 } else {
     console.log("No se encontró ningún producto con ese código.");
 }
+
+
+console.log("\n");
+console.log("Actualizando el Producto 1:");
+productManager.updateProduct(1, { title: "Actualizamos Titulo de Id 1 V2", price: 15.99 });
+
+
+/*console.log("\n");
+console.log("Eliminando el Producto 2:");
+productManager.deleteProduct(2);*/
