@@ -1,0 +1,13 @@
+{
+  "name": "mi-servidor-express",
+  "version": "1.0.0",
+  "description": "Un servidor Express básico",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
+

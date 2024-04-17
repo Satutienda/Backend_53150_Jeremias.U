@@ -4,6 +4,17 @@ class ProductManager {
     constructor() {
         this.products = [];
         this.productIdCounter = 1;
+        this.loadProductsFromFile(); 
+    }
+
+    loadProductsFromFile(filePath = 'productos.json') {
+        try {
+            const data = fs.readFileSync(filePath, 'utf8');
+            this.products = JSON.parse(data);
+            console.log(`Productos cargados desde el archivo ${filePath}:`, this.products); 
+        } catch (err) {
+            console.error('Error al cargar los productos desde el archivo:', err);
+        }
     }
 
     addProduct(title, description, price, thumbnail, code, stock) {
@@ -32,8 +43,8 @@ class ProductManager {
         this.saveProductsToFile();
     }
 
-    findProductByCode(code) {
-        return this.products.find(product => product.code === code);
+    findProductByCode(id) {
+        return this.products.find(product => product.id === id);
     }
 
     getAllProducts() {
@@ -59,7 +70,6 @@ class ProductManager {
             return;
         }
 
-      
         Object.assign(productToUpdate, updatedFields);
 
         this.saveProductsToFile();
@@ -74,7 +84,6 @@ class ProductManager {
             return;
         }
 
-        
         this.products.splice(index, 1);
 
         this.saveProductsToFile();
@@ -89,44 +98,6 @@ class ProductManager {
     }
 }
 
-
-// testeamos el Funcionamiento 
-const productManager = new ProductManager();
-
-console.log("Primeras acciones: \n");
-productManager.addProduct("Producto 1", "Descripción del producto 1", 10.99, "thumbnail1.jpg", "001", 100);
-productManager.addProduct("Producto 2", "Descripción del producto 2", 20.49, "thumbnail2.jpg", "002", 50);
-
-console.log("\n");
-console.log("Viendo resultados al intentar agregar un articulo con ID existente:");
-productManager.addProduct("Producto 3", "Descripción del producto 3", 30.99, "thumbnail3.jpg", "001", 200);
-
-console.log("\n");
-console.log("Viendo resultados al intentar agregar un articulo sin campos obligatorios:");
-productManager.addProduct("Producto 4", "", 40.99, "thumbnail4.jpg", "004", 300);
-
-console.log("\n");
-console.log("Se muestran todos los articulos:");
-const allProducts = productManager.getAllProducts();
-console.log(allProducts);
+module.exports = ProductManager;
 
 
-console.log("\n");
-console.log("Se muestra el resultado de la busqueda por code:");
-
-const productFound = productManager.findProductByCode('002');
-if (productFound) {
-    console.log("Producto encontrado:", productFound);
-} else {
-    console.log("No se encontró ningún producto con ese código.");
-}
-
-
-console.log("\n");
-console.log("Actualizando el Producto 1:");
-productManager.updateProduct(1, { title: "Actualizamos Titulo de Id 1 V2", price: 15.99 });
-
-
-/*console.log("\n");
-console.log("Eliminando el Producto 2:");
-productManager.deleteProduct(2);*/
