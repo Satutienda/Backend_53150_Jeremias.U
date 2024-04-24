@@ -3,8 +3,7 @@ const fs = require('fs');
 class ProductManager {
     constructor() {
         this.products = [];
-        this.productIdCounter = 1;
-        this.loadProductsFromFile(); 
+        this.loadProductsFromFile();
     }
 
     loadProductsFromFile(filePath = 'productos.json') {
@@ -17,8 +16,8 @@ class ProductManager {
         }
     }
 
-    addProduct(title, description, price, thumbnail, code, stock) {
-        if (!title || !description || !price || !thumbnail || !code || !stock) {
+    addProduct(title, description, price, thumbnail, code, stock, status = true, category) {
+        if (!title || !description || !price || !thumbnail || !code || !stock || category === undefined) {
             console.log("Todos los campos son obligatorios.");
             return;
         }
@@ -29,19 +28,31 @@ class ProductManager {
         }
 
         const product = {
-            id: this.productIdCounter++,
+            id: this.getNextProductId(),
             title: title,
             description: description,
             price: price,
             thumbnail: thumbnail,
             code: code,
-            stock: stock
+            stock: stock,
+            status: status,
+            category: category
         };
         this.products.push(product);
 
         console.log(`Se agregó el Producto con ID-${product.id} exitosamente.`);
         this.saveProductsToFile();
     }
+
+    getNextProductId() {
+        let nextId = 1;
+        if (this.products.length > 0) {
+            const maxId = Math.max(...this.products.map(product => product.id));
+            nextId = maxId + 1;
+        }
+        return nextId;
+    }
+
 
     findProductByCode(id) {
         return this.products.find(product => product.id === id);
@@ -56,7 +67,9 @@ class ProductManager {
                 price: product.price,
                 thumbnail: product.thumbnail,
                 code: product.code,
-                stock: product.stock
+                stock: product.stock,
+                status: status,
+                category: category
             };
         });
 
@@ -69,27 +82,38 @@ class ProductManager {
             console.log(`No se encontró ningún producto con ID-${id}.`);
             return;
         }
-
+    
+        
+        delete updatedFields.id;
+    
         Object.assign(productToUpdate, updatedFields);
-
+    
         this.saveProductsToFile();
-
+    
         console.log(`Producto con ID-${id} actualizado exitosamente.`);
     }
+    
 
     deleteProduct(id) {
+        
+        if (isNaN(id)) {
+            console.log(`El ID proporcionado (${id}) no es válido.`);
+            return;
+        }
+    
         const index = this.products.findIndex(product => product.id === id);
         if (index === -1) {
             console.log(`No se encontró ningún producto con ID-${id}.`);
             return;
         }
-
+    
         this.products.splice(index, 1);
-
+    
         this.saveProductsToFile();
-
+    
         console.log(`Producto con ID-${id} eliminado exitosamente.`);
     }
+    
 
     saveProductsToFile(filePath = 'productos.json') {
         const data = JSON.stringify(this.products, null, 2);

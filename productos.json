@@ -1,20 +1,24 @@
 [
   {
     "id": 1,
-    "title": "Actualizamos Titulo de Id 1 V2",
-    "description": "Descripción del producto 1",
-    "price": 15.99,
-    "thumbnail": "thumbnail1.jpg",
-    "code": "001",
-    "stock": 100
+    "title": "Remera manga corta (actual)",
+    "description": "La mejor de todas en 100% calidad ",
+    "price": 19.99,
+    "thumbnail": "https://imagenarticulos.blob.core.windows.net/imagmaestro/D_630421-MLU51993055102_102022-B_440x.jpg",
+    "code": "3",
+    "stock": 10,
+    "status": true,
+    "category": "Pantalones"
   },
   {
     "id": 2,
-    "title": "Producto 2",
-    "description": "Descripción del producto 2",
-    "price": 20.49,
-    "thumbnail": "thumbnail2.jpg",
-    "code": "002",
-    "stock": 50
+    "title": "Celular resistente Blacview BL8000",
+    "description": "Resite polvo, agua, caidas y mucho mas ",
+    "price": 19000.99,
+    "thumbnail": "https://imagenarticulos.blob.core.windows.net/imagmaestro/thumb_864649_default_big.webp",
+    "code": "2",
+    "stock": 10,
+    "status": true,
+    "category": "Pantalones"
   }
 ]
