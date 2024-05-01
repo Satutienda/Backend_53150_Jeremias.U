@@ -20,5 +20,49 @@
     "stock": 10,
     "status": true,
     "category": "Pantalones"
+  },
+  {
+    "id": 3,
+    "title": "Agua mineral ",
+    "description": "la mejor del pais ",
+    "price": 1050,
+    "thumbnail": "no hay",
+    "code": "5",
+    "stock": 250,
+    "status": true,
+    "category": "bebidas"
+  },
+  {
+    "id": 4,
+    "title": "Refresco de manzana ",
+    "description": "Las mas verdes ",
+    "price": 500,
+    "thumbnail": "no tiene",
+    "code": "6",
+    "stock": 25,
+    "status": true,
+    "category": "bebidas"
+  },
+  {
+    "id": 5,
+    "title": "reloj de arena ",
+    "description": "No dejes pasar el tiempo ",
+    "price": 590,
+    "thumbnail": "no hay ",
+    "code": "8",
+    "stock": 15,
+    "status": true,
+    "category": "home"
+  },
+  {
+    "id": 6,
+    "title": "Guitarra clasica",
+    "description": "Madera realizada a mano ",
+    "price": 15590,
+    "thumbnail": "no hay ",
+    "code": "9",
+    "stock": 25,
+    "status": true,
+    "category": "Musica"
   }
 ]

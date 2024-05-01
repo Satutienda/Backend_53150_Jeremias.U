@@ -10,7 +10,7 @@ class ProductManager {
         try {
             const data = fs.readFileSync(filePath, 'utf8');
             this.products = JSON.parse(data);
-            console.log(`Productos cargados desde el archivo ${filePath}:`, this.products); 
+            //console.log(`Productos cargados desde el archivo ${filePath}:`, this.products); 
         } catch (err) {
             console.error('Error al cargar los productos desde el archivo:', err);
         }
@@ -121,7 +121,6 @@ class ProductManager {
         console.log(`Productos guardados en el archivo ${filePath}.`);
     }
 }
-
-module.exports = ProductManager;
+module.exports=  ProductManager;
 
 

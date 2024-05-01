@@ -1,16 +1,51 @@
 const express = require('express');
+const http = require('http');
+const socketIO = require('socket.io');
+const handlebars = require('express-handlebars');
 const bodyParser = require('body-parser');
-
+const fs = require('fs');
 const ProductManager = require('./productManager.js');
-const CartManager = require("./cartManager.js")
+const CartManager = require('./cartManager.js');
+const viewsRouter = require('../src/routes/views.routes.js');
+const path = require('path');
 
 const app = express();
+const server = http.createServer(app);
+const socketServer = socketIO(server);
+
 const PORT = process.env.PORT || 8080;
 const productManager = new ProductManager();
 const cartManager = new CartManager();
 
 app.use(bodyParser.json());
 
+
+app.engine('handlebars', handlebars.engine());
+app.set('view engine', 'handlebars');
+app.set('views', path.join('views'));
+
+app.use("/", viewsRouter)
+
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/realTimeProducts', (req, res) => {
+
+
+    fs.readFile('productos.json', (err, data) => {
+        if (err) {
+            console.error('Error al leer el archivo de productos:', err);
+            return res.status(500).send('Error interno del servidor');
+        }
+        const productos = JSON.parse(data);
+
+
+        res.render('realTimeProducts', {
+            productos,
+            style: "home.css"
+        });
+    });
+});
 
 
 app.get('/api/products', async (req, res) => {
@@ -26,7 +61,6 @@ app.get('/api/products', async (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-
 
 app.get('/api/products/:pid', async (req, res) => {
     try {
@@ -46,7 +80,23 @@ app.get('/api/products/:pid', async (req, res) => {
 app.post('/api/products', (req, res) => {
     try {
         const { title, description, price, thumbnail, code, stock, status, category } = req.body;
+
+
         productManager.addProduct(title, description, price, thumbnail, code, stock, status, category);
+
+
+        socketServer.emit('nuevoProducto', {
+            title,
+            description,
+            price,
+            thumbnail,
+            code,
+            stock,
+            status,
+            category
+        });
+
+        // Responder con un mensaje de éxito
         res.status(201).json({ message: 'Producto agregado exitosamente' });
     } catch (error) {
         console.error('Error al agregar producto:', error);
@@ -155,6 +205,17 @@ app.post('/api/carts/:cid/products/:pid', (req, res) => {
 
 
 
-app.listen(PORT, () => {
+
+
+socketServer.on('connection', (socket) => {
+    console.log('Nuevo cliente conectado al espacio de nombres "realTimeProduct"');
+
+
+    socket.on('error', (error) => {
+        console.error('Error en la conexión del socket:', error);
+    });
+});
+
+server.listen(PORT, () => {
     console.log(`Servidor Express escuchando en el puerto ${PORT}`);
 });

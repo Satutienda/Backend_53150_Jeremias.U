@@ -1,4 +1,5 @@
 
+const { defaultMaxListeners } = require('events');
 const fs = require('fs');
 
 class CartManager {
@@ -11,7 +12,7 @@ class CartManager {
         try {
             const data = fs.readFileSync(filePath, 'utf8');
             this.cart = JSON.parse(data);
-            console.log(`Carrito cargado desde el archivo ${filePath}:`, this.cart);
+            //console.log(`Carrito cargado desde el archivo ${filePath}:`, this.cart);
         } catch (err) {
             console.error('Error al cargar el carrito desde el archivo:', err);
         }
@@ -81,4 +82,4 @@ class CartManager {
     }
 }
 
-module.exports = CartManager;
+module.exports= CartManager;
