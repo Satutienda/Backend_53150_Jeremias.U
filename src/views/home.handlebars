@@ -1,0 +1,114 @@
+<div>
+    <h1>Lista de Productos en Tiempo real </h1>
+    <ul id="productList">
+        {{#each productos}}
+        <li>
+            <strong>{{this.title}}</strong>: {{this.description}} - Precio: {{this.price}}
+        </li>
+        {{/each}}
+    </ul>
+</div>
+
+<form id="productForm">
+    <label for="title">Título:</label>
+    <input type="text" id="title" name="title" required>
+    <br>
+    <label for="description">Descripción:</label>
+    <input type="text" id="description" name="description" required>
+    <br>
+    <label for="price">Precio:</label>
+    <input type="number" id="price" name="price" required>
+    <br>
+    <label for="thumbnail">URL de la Imagen:</label>
+    <input type="text" id="thumbnail" name="thumbnail" required>
+    <br>
+    <label for="code">Código:</label>
+    <input type="text" id="code" name="code" required>
+    <br>
+    <label for="stock">Stock:</label>
+    <input type="number" id="stock" name="stock" required>
+    <br>
+    <label for="status">Estado:</label>
+    <select id="status" name="status" required>
+        <option value="true">Activo</option>
+        <option value="false">Inactivo</option>
+    </select>
+    <br>
+    <label for="category">Categoría:</label>
+    <input type="text" id="category" name="category" required>
+    <br>
+    <button type="submit">Crear Producto</button>
+</form>
+
+
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+    const socket = io();
+
+    socket.on('connect', () => {
+        console.log('Conectado al servidor de Socket.io');
+    });
+
+    // Manejar envío del formulario
+    document.getElementById('productForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        const title = formData.get('title');
+        const description = formData.get('description');
+        const price = formData.get('price');
+        const thumbnail = formData.get('thumbnail');
+        const code = formData.get('code');
+        const stock = formData.get('stock');
+        const status = formData.get('status');
+        const category = formData.get('category');
+
+        const productData = {
+            title,
+            description,
+            price: parseFloat(price),
+            thumbnail,
+            code,
+            stock: parseInt(stock),
+            status: status === 'true',
+            category
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/api/products', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(productData)
+            });
+
+            if (response.ok) {
+                console.log('Producto creado exitosamente');
+            } else {
+                console.error('Error al crear el producto:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error al realizar la solicitud:', error.message);
+        }
+
+        event.target.reset();
+    });
+
+
+    socket.on('nuevoProducto', (productData) => {
+        console.log('Nuevo producto recibido:', productData);
+
+
+        const newProductListItem = document.createElement('li');
+        newProductListItem.innerHTML = `<strong>${productData.title}</strong>: ${productData.description} - Precio: ${productData.price}`;
+
+
+        const productList = document.getElementById('productList');
+        productList.appendChild(newProductListItem);
+    });
+
+</script>
+

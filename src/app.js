@@ -1,11 +1,12 @@
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
-const handlebars = require('express-handlebars');
+const exphbs = require('express-handlebars');
 const bodyParser = require('body-parser');
-const fs = require('fs');
-const ProductManager = require('./productManager.js');
-const CartManager = require('./cartManager.js');
+const mongoose = require('mongoose');
+const Product = require('../src/dao/models/products.js');
+const Cart = require('../src/dao/models/carts');
+const Message = require('../src/dao/models/messages');
 const viewsRouter = require('../src/routes/views.routes.js');
 const path = require('path');
 
@@ -14,44 +15,32 @@ const server = http.createServer(app);
 const socketServer = socketIO(server);
 
 const PORT = process.env.PORT || 8080;
-const productManager = new ProductManager();
-const cartManager = new CartManager();
 
 app.use(bodyParser.json());
 
-
-app.engine('handlebars', handlebars.engine());
+// Configuración de Handlebars
+app.engine('handlebars', exphbs.engine());
 app.set('view engine', 'handlebars');
-app.set('views', path.join('views'));
+app.set('views', path.join(__dirname, 'views'));
 
-app.use("/", viewsRouter)
-
+app.use("/", viewsRouter);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/realTimeProducts', (req, res) => {
+// Conectar a MongoDB
+const mongoDBUrl = "mongodb+srv://jerbri115:66wUqQb%3Agg5XQb8@coder.ny4cphv.mongodb.net/ecommerce"
 
+mongoose.connect(mongoDBUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => {
+        console.log('Conectado a MongoDB');
+    })
+    .catch(error => console.error('Error al conectar a MongoDB:', error));
 
-    fs.readFile('productos.json', (err, data) => {
-        if (err) {
-            console.error('Error al leer el archivo de productos:', err);
-            return res.status(500).send('Error interno del servidor');
-        }
-        const productos = JSON.parse(data);
-
-
-        res.render('realTimeProducts', {
-            productos,
-            style: "home.css"
-        });
-    });
-});
-
-
+// Rutas para Productos
 app.get('/api/products', async (req, res) => {
     try {
         let limit = req.query.limit;
-        let products = productManager.getAllProducts();
+        let products = await Product.find();
         if (limit) {
             products = products.slice(0, parseInt(limit));
         }
@@ -64,8 +53,7 @@ app.get('/api/products', async (req, res) => {
 
 app.get('/api/products/:pid', async (req, res) => {
     try {
-        const id = parseInt(req.params.pid);
-        const product = await productManager.findProductByCode(id);
+        const product = await Product.findById(req.params.pid);
         if (product) {
             res.json(product);
         } else {
@@ -77,98 +65,72 @@ app.get('/api/products/:pid', async (req, res) => {
     }
 });
 
-app.post('/api/products', (req, res) => {
+app.post('/api/products', async (req, res) => {
     try {
-        const { title, description, price, thumbnail, code, stock, status, category } = req.body;
+        const newProduct = new Product(req.body);
+        const savedProduct = await newProduct.save();
 
+        socketServer.emit('nuevoProducto', savedProduct);
 
-        productManager.addProduct(title, description, price, thumbnail, code, stock, status, category);
-
-
-        socketServer.emit('nuevoProducto', {
-            title,
-            description,
-            price,
-            thumbnail,
-            code,
-            stock,
-            status,
-            category
-        });
-
-        // Responder con un mensaje de éxito
-        res.status(201).json({ message: 'Producto agregado exitosamente' });
+        res.status(201).json({ message: 'Producto agregado exitosamente', product: savedProduct });
     } catch (error) {
         console.error('Error al agregar producto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
-app.put('/api/products/:pid', (req, res) => {
+app.put('/api/products/:pid', async (req, res) => {
     try {
-        const id = parseInt(req.params.pid);
-        const { title, description, price, thumbnail, code, stock, status, category } = req.body;
-
-        const updatedFields = {
-            title,
-            description,
-            price,
-            thumbnail,
-            code,
-            stock,
-            status,
-            category
-        };
-
-        productManager.updateProduct(id, updatedFields);
-
-        res.json({ message: `Producto con ID-${id} actualizado exitosamente` });
+        const updatedProduct = await Product.findByIdAndUpdate(req.params.pid, req.body, { new: true });
+        if (updatedProduct) {
+            res.json({ message: `Producto con ID-${req.params.pid} actualizado exitosamente`, product: updatedProduct });
+        } else {
+            res.status(404).json({ error: 'Producto no encontrado' });
+        }
     } catch (error) {
         console.error('Error al actualizar producto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
-app.delete('/api/products/:pid', (req, res) => {
+app.delete('/api/products/:pid', async (req, res) => {
     try {
-        const id = parseInt(req.params.pid);
-
-        productManager.deleteProduct(id);
-
-        res.json({ message: `Producto con ID-${id} eliminado exitosamente` });
+        const deletedProduct = await Product.findByIdAndDelete(req.params.pid);
+        if (deletedProduct) {
+            res.json({ message: `Producto con ID-${req.params.pid} eliminado exitosamente` });
+        } else {
+            res.status(404).json({ error: 'Producto no encontrado' });
+        }
     } catch (error) {
         console.error('Error al eliminar producto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
-
-app.post('/api/carts', (req, res) => {
+// Rutas para Carritos
+app.post('/api/carts', async (req, res) => {
     try {
-        const { products } = req.body;
+        const newCart = new Cart(req.body);
+        const savedCart = await newCart.save();
+        const populatedCart = await Cart.findById(savedCart._id).populate('products.product').lean().exec();
 
-        if (!products || !Array.isArray(products) || products.length === 0) {
-            res.status(400).json({ error: 'Debe proporcionar al menos un producto para crear un carrito.' });
-            return;
-        }
-
-        const newCart = cartManager.createCart(products);
-        res.status(201).json({ message: 'Carrito creado exitosamente', cart: newCart });
+        res.status(201).json({
+            message: 'Carrito creado exitosamente',
+            cart: populatedCart
+        });
     } catch (error) {
         console.error('Error al crear el carrito:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
-app.get('/api/carts/:cid', (req, res) => {
+app.get('/api/carts/:cid', async (req, res) => {
     try {
-        const cartId = parseInt(req.params.cid);
-        const cart = cartManager.getCartById(cartId);
-
+        const cart = await Cart.findById(req.params.cid).populate('products.product');
         if (cart) {
             res.status(200).json(cart);
         } else {
-            res.status(404).json({ error: `No se encontró ningún carrito con ID-${cartId}` });
+            res.status(404).json({ error: `No se encontró ningún carrito con ID-${req.params.cid}` });
         }
     } catch (error) {
         console.error('Error al obtener el carrito:', error);
@@ -176,23 +138,16 @@ app.get('/api/carts/:cid', (req, res) => {
     }
 });
 
-app.post('/api/carts/:cid/products/:pid', (req, res) => {
+app.post('/api/carts/:cid/products/:pid', async (req, res) => {
     try {
-        const cid = parseInt(req.params.cid);
-        const pid = parseInt(req.params.pid);
-        const { quantity } = req.body;
-
-        if (isNaN(cid) || isNaN(pid) || isNaN(quantity) || quantity <= 0) {
-            res.status(400).json({ error: 'Debe proporcionar un ID de carrito, un ID de producto y una cantidad válida.' });
-            return;
-        }
-
-        const success = cartManager.addProductToCart(cid, pid, quantity);
-
-        if (success) {
-            res.status(201).json({ message: `Producto con ID-${pid} agregado al carrito con ID-${cid} exitosamente` });
+        const cart = await Cart.findById(req.params.cid);
+        if (cart) {
+            const product = { product: req.params.pid, quantity: req.body.quantity };
+            cart.products.push(product);
+            await cart.save();
+            res.status(201).json({ message: `Producto con ID-${req.params.pid} agregado al carrito con ID-${req.params.cid} exitosamente` });
         } else {
-            res.status(404).json({ error: `No se encontró ningún carrito con ID-${cid}` });
+            res.status(404).json({ error: `No se encontró ningún carrito con ID-${req.params.cid}` });
         }
     } catch (error) {
         console.error('Error al agregar el producto al carrito:', error);
@@ -200,16 +155,46 @@ app.post('/api/carts/:cid/products/:pid', (req, res) => {
     }
 });
 
+// Rutas para Mensajes
+app.post('/api/mensajes', async (req, res) => {
+    try {
+        const nuevoMensaje = new Message(req.body);
+        const savedMessage = await nuevoMensaje.save();
+        res.status(201).json({ message: 'Mensaje creado exitosamente', message: savedMessage });
+    } catch (error) {
+        console.error('Error al crear el mensaje:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
 
+app.get('/api/mensajes', async (req, res) => {
+    try {
+        const messages = await Message.find().populate('user').lean().exec();
+        res.json(messages);
+    } catch (error) {
+        console.error('Error al obtener los mensajes:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
 
-
-
-
-
-
+// Configuración de Socket.io para el chat
 socketServer.on('connection', (socket) => {
-    console.log('Nuevo cliente conectado al espacio de nombres "realTimeProduct"');
+    console.log('Nuevo cliente conectado al chat');
 
+    // Manejo de mensajes de chat
+    socket.on('chatMessage', async (msg) => {
+        try {
+            const message = new Message({ message: msg, user: 'Usuario' }); // Ajusta según tus necesidades
+            const savedMessage = await message.save();
+            socketServer.emit('message', { user: 'Usuario', message: msg }); // Emitir el mensaje a todos los clientes conectados
+        } catch (error) {
+            console.error('Error al guardar el mensaje:', error);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Cliente desconectado del chat');
+    });
 
     socket.on('error', (error) => {
         console.error('Error en la conexión del socket:', error);
