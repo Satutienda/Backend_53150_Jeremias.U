@@ -1,114 +1,196 @@
-<div>
-    <h1>Lista de Productos en Tiempo real </h1>
-    <ul id="productList">
-        {{#each productos}}
-        <li>
-            <strong>{{this.title}}</strong>: {{this.description}} - Precio: {{this.price}}
-        </li>
-        {{/each}}
-    </ul>
-</div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Productos en Tiempo Real</title>
+    <link rel="stylesheet" href="/css/home.css">
+</head>
+<body>
+    <div>
+        <h1>Lista de Productos en Tiempo Real</h1>
+        <div class="search-container">
+            <label for="query">Buscar:</label>
+            <input type="text" id="query" name="query">
+            <label for="sort">Ordenar por Precio:</label>
+            <select id="sort" name="sort">
+                <option value="">Sin orden</option>
+                <option value="asc">Ascendente</option>
+                <option value="desc">Descendente</option>
+            </select>
+            <button id="searchButton">Buscar</button>
+        </div>
+        <ul id="productList">
+            {{#each productos}}
+            <li>
+                <strong>{{this.title}}</strong>: {{this.description}} - Precio: {{this.price}}
+            </li>
+            {{/each}}
+        </ul>
+    </div>
 
-<form id="productForm">
-    <label for="title">Título:</label>
-    <input type="text" id="title" name="title" required>
-    <br>
-    <label for="description">Descripción:</label>
-    <input type="text" id="description" name="description" required>
-    <br>
-    <label for="price">Precio:</label>
-    <input type="number" id="price" name="price" required>
-    <br>
-    <label for="thumbnail">URL de la Imagen:</label>
-    <input type="text" id="thumbnail" name="thumbnail" required>
-    <br>
-    <label for="code">Código:</label>
-    <input type="text" id="code" name="code" required>
-    <br>
-    <label for="stock">Stock:</label>
-    <input type="number" id="stock" name="stock" required>
-    <br>
-    <label for="status">Estado:</label>
-    <select id="status" name="status" required>
-        <option value="true">Activo</option>
-        <option value="false">Inactivo</option>
-    </select>
-    <br>
-    <label for="category">Categoría:</label>
-    <input type="text" id="category" name="category" required>
-    <br>
-    <button type="submit">Crear Producto</button>
-</form>
+    <div id="pagination">
+        <button id="prevPage" disabled>Anterior</button>
+        <span id="pageInfo">Página 1</span>
+        <button id="nextPage">Siguiente</button>
+    </div>
 
+    <form id="productForm">
+        <label for="title">Título:</label>
+        <input type="text" id="title" name="title" required>
+        <br>
+        <label for="description">Descripción:</label>
+        <input type="text" id="description" name="description" required>
+        <br>
+        <label for="price">Precio:</label>
+        <input type="number" id="price" name="price" required>
+        <br>
+        <label for="thumbnail">URL de la Imagen:</label>
+        <input type="text" id="thumbnail" name="thumbnail" required>
+        <br>
+        <label for="code">Código:</label>
+        <input type="text" id="code" name="code" required>
+        <br>
+        <label for="stock">Stock:</label>
+        <input type="number" id="stock" name="stock" required>
+        <br>
+        <label for="status">Estado:</label>
+        <select id="status" name="status" required>
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+        </select>
+        <br>
+        <label for="category">Categoría:</label>
+        <input type="text" id="category" name="category" required>
+        <br>
+        <button type="submit">Crear Producto</button>
+    </form>
 
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentPage = 1;
+        const limit = 10;
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
+        socket.on('connect', () => {
+            console.log('Conectado al servidor de Socket.io');
+            fetchProducts();
+        });
 
-    const socket = io();
-
-    socket.on('connect', () => {
-        console.log('Conectado al servidor de Socket.io');
-    });
-
-    // Manejar envío del formulario
-    document.getElementById('productForm').addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const formData = new FormData(event.target);
-        const title = formData.get('title');
-        const description = formData.get('description');
-        const price = formData.get('price');
-        const thumbnail = formData.get('thumbnail');
-        const code = formData.get('code');
-        const stock = formData.get('stock');
-        const status = formData.get('status');
-        const category = formData.get('category');
-
-        const productData = {
-            title,
-            description,
-            price: parseFloat(price),
-            thumbnail,
-            code,
-            stock: parseInt(stock),
-            status: status === 'true',
-            category
-        };
-
-        try {
-            const response = await fetch('http://localhost:8080/api/products', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(productData)
-            });
-
-            if (response.ok) {
-                console.log('Producto creado exitosamente');
-            } else {
-                console.error('Error al crear el producto:', response.statusText);
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchProducts();
             }
-        } catch (error) {
-            console.error('Error al realizar la solicitud:', error.message);
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            currentPage++;
+            fetchProducts();
+        });
+
+        document.getElementById('searchButton').addEventListener('click', () => {
+            currentPage = 1;
+            fetchProducts();
+        });
+
+        async function fetchProducts() {
+            const query = document.getElementById('query').value;
+            const sort = document.getElementById('sort').value;
+            const url = new URL(`http://localhost:8080/api/products`);
+            url.searchParams.append('page', currentPage);
+            url.searchParams.append('limit', limit);
+            if (query) {
+                url.searchParams.append('query', query);
+            }
+            if (sort) {
+                url.searchParams.append('sort', sort);
+            }
+
+            try {
+                const response = await fetch(url.toString());
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const productList = document.getElementById('productList');
+                    productList.innerHTML = '';
+
+                    data.payload.forEach(product => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `<strong>${product.title}</strong>: ${product.description} - Precio: ${product.price}`;
+                        productList.appendChild(listItem);
+                    });
+
+                    document.getElementById('pageInfo').textContent = `Página ${data.page}`;
+                    document.getElementById('prevPage').disabled = !data.hasPrevPage;
+                    document.getElementById('nextPage').disabled = !data.hasNextPage;
+                } else {
+                    console.error('Error en la respuesta del servidor:', data.error);
+                }
+            } catch (error) {
+                console.error('Error al obtener los productos:', error);
+            }
         }
 
-        event.target.reset();
-    });
+        document.getElementById('productForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const title = formData.get('title');
+            const description = formData.get('description');
+            const price = formData.get('price');
+            const thumbnail = formData.get('thumbnail');
+            const code = formData.get('code');
+            const stock = formData.get('stock');
+            const status = formData.get('status');
+            const category = formData.get('category');
+
+            const productData = {
+                title,
+                description,
+                price: parseFloat(price),
+                thumbnail,
+                code,
+                stock: parseInt(stock),
+                status: status === 'true',
+                category
+            };
+
+            try {
+                const response = await fetch('http://localhost:8080/api/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(productData)
+                });
+
+                if (response.ok) {
+                    console.log('Producto creado exitosamente');
+                    fetchProducts(); // Actualizar la lista de productos
+                } else {
+                    console.error('Error al crear el producto:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error al realizar la solicitud:', error.message);
+            }
+
+            event.target.reset();
+        });
+
+        socket.on('nuevoProducto', (productData) => {
+            console.log('Nuevo producto recibido:', productData);
+
+            const newProductListItem = document.createElement('li');
+            newProductListItem.innerHTML = `<strong>${productData.title}</strong>: ${productData.description} - Precio: ${productData.price}`;
+
+            const productList = document.getElementById('productList');
+            productList.appendChild(newProductListItem);
+        });
+    </script>
+</body>
+</html>
 
 
-    socket.on('nuevoProducto', (productData) => {
-        console.log('Nuevo producto recibido:', productData);
 
-
-        const newProductListItem = document.createElement('li');
-        newProductListItem.innerHTML = `<strong>${productData.title}</strong>: ${productData.description} - Precio: ${productData.price}`;
-
-
-        const productList = document.getElementById('productList');
-        productList.appendChild(newProductListItem);
-    });
-
-</script>
 
