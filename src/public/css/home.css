@@ -1,78 +1,132 @@
+/* Estilos generales */
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
+  font-family: 'Arial', sans-serif;
+  background-color: #f4f4f9;
+  color: #333;
   margin: 0;
   padding: 0;
 }
 
-div {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  background: #fff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
 h1 {
   text-align: center;
-  color: #333;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  padding: 10px;
-  margin: 5px 0;
-  background: #eee;
-  border-radius: 5px;
-}
-
-form {
+  color: #444;
   margin-top: 20px;
 }
 
-form label {
+/* Contenedor principal */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Botón para ver el carrito */
+#viewCart {
   display: block;
-  margin: 10px 0 5px;
-}
-
-form input, form select, form button {
-  width: 100%;
-  padding: 10px;
-  margin: 5px 0;
-  box-sizing: border-box;
-}
-
-form button {
-  background-color: #007BFF;
-  color: white;
+  margin: 0 auto 20px auto;
+  padding: 10px 20px;
+  background-color: #ffa500;
+  color: #fff;
   border: none;
+  border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: center;
+  font-size: 1em;
 }
 
-form button:hover {
-  background-color: #0056b3;
+#viewCart:hover {
+  background-color: #e69500;
 }
 
+/* Barra de búsqueda */
 .search-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  width: 700px;
 }
 
 .search-container label {
   margin-right: 10px;
+  color: #555;
 }
 
-.search-container input, .search-container select, .search-container button {
-  flex: 1;
-  margin-right: 10px;
+.search-container input, 
+.search-container select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
+.search-container button {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.search-container button:hover {
+  background-color: #45a049;
+}
+
+/* Lista de productos */
+#productList {
+  list-style-type: none;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  margin-top: 200px;
+}
+
+#productList li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+#productList li:last-child {
+  border-bottom: none;
+}
+
+#productList strong {
+  font-size: 1.2em;
+  color: #222;
+  margin-bottom: 5px;
+}
+
+#productList span {
+  color: #555;
+  margin-bottom: 10px;
+}
+
+/* Botones de productos */
+#productList button {
+  padding: 10px 15px;
+  margin: 5px 0;
+  background-color: #007BFF;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#productList button:hover {
+  background-color: #0056b3;
+}
+
+/* Paginación */
 #pagination {
   display: flex;
   justify-content: center;
@@ -82,11 +136,97 @@ form button:hover {
 
 #pagination button {
   padding: 10px 20px;
-  margin: 0 10px;
+  margin: 0 5px;
+  background-color: #008CBA;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 #pagination button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+#pagination button:hover:not(:disabled) {
+  background-color: #006f9a;
+}
+
+#pagination span {
+  margin: 0 10px;
+  color: #555;
+}
+
+/* Formulario de productos */
+form {
+  margin-top: 20px;
+}
+
+form label {
+  display: block;
+  margin-top: 10px;
+  color: #555;
+}
+
+form input, 
+form select {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+form button {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin-top: 20px;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+form button:hover {
+  background-color: #218838;
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+  .search-container {
+      flex-direction: column;
+      align-items: flex-start;
+  }
+
+  .search-container label, 
+  .search-container input, 
+  .search-container select, 
+  .search-container button {
+      width: 100%;
+      margin-top: 10px;
+  }
+
+  #productList li {
+      flex-direction: column;
+      align-items: flex-start;
+  }
+
+  #productList li strong {
+      margin-bottom: 10px;
+  }
+}
+
+.productForm{
+  display: flex;
+  flex-direction: column;
+  width: 500px;
+  border: solid  rgba(177, 170, 170, 0.555) 1px;
+  padding: 20px;
+  margin-left: 20px;
+  margin-top: 300px;
 }

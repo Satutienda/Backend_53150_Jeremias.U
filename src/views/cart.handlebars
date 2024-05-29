@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito de Compras</title>
+    <link rel="stylesheet" href="/css/cart.css">
+</head>
+<body>
+    <div>
+        <h1>Carrito de Compras</h1>
+        <ul id="cartList">
+            {{#each cart.products}}
+            <li>
+                <strong>{{this.product.title}}</strong>: {{this.product.description}} - Precio: {{this.product.price}} - Cantidad: {{this.quantity}}
+            </li>
+            {{/each}}
+        </ul>
+        <button id="clearCart">Vaciar Carrito</button>
+    </div>
+
+    <script>
+        document.getElementById('clearCart').addEventListener('click', async () => {
+            const cartId = '664bfc626893a7077351bced'; // ID del carrito proporcionado
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/carts/${cartId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    console.log('Carrito vaciado exitosamente');
+                    window.location.reload();
+                } else {
+                    console.error('Error al vaciar el carrito:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error al realizar la solicitud:', error.message);
+            }
+        });
+    </script>
+</body>
+</html>
+

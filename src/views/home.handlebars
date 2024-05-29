@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Productos en Tiempo Real</title>
     <link rel="stylesheet" href="/css/home.css">
 </head>
+
 <body>
     <div>
         <h1>Lista de Productos en Tiempo Real</h1>
+        <div>
+            <button id="viewCart">Ver Carrito</button>
+        </div>
         <div class="search-container">
             <label for="query">Buscar:</label>
             <input type="text" id="query" name="query">
@@ -22,8 +27,10 @@
         </div>
         <ul id="productList">
             {{#each productos}}
-            <li>
+            <li data-id="{{this._id}}">
                 <strong>{{this.title}}</strong>: {{this.description}} - Precio: {{this.price}}
+                <button class="add-to-cart">Agregar al Carrito</button>
+                <button class="view-details">Ver Detalles</button>
             </li>
             {{/each}}
         </ul>
@@ -35,7 +42,7 @@
         <button id="nextPage">Siguiente</button>
     </div>
 
-    <form id="productForm">
+    <form id="productForm" class="productForm">
         <label for="title">Título:</label>
         <input type="text" id="title" name="title" required>
         <br>
@@ -70,7 +77,7 @@
     <script>
         const socket = io();
         let currentPage = 1;
-        const limit = 10;
+        const limit = 5;
 
         socket.on('connect', () => {
             console.log('Conectado al servidor de Socket.io');
@@ -92,6 +99,10 @@
         document.getElementById('searchButton').addEventListener('click', () => {
             currentPage = 1;
             fetchProducts();
+        });
+
+        document.getElementById('viewCart').addEventListener('click', () => {
+            window.location.href = '/cart';
         });
 
         async function fetchProducts() {
@@ -117,18 +128,71 @@
 
                     data.payload.forEach(product => {
                         const listItem = document.createElement('li');
-                        listItem.innerHTML = `<strong>${product.title}</strong>: ${product.description} - Precio: ${product.price}`;
+                        listItem.setAttribute('data-id', product._id);
+                        listItem.innerHTML = `<strong>${product.title}</strong>: ${product.description} - Precio: ${product.price}
+                                             <button class="add-to-cart">Agregar al Carrito</button>
+                                             <button class="view-details">Ver Detalles</button>`;
                         productList.appendChild(listItem);
                     });
 
                     document.getElementById('pageInfo').textContent = `Página ${data.page}`;
                     document.getElementById('prevPage').disabled = !data.hasPrevPage;
                     document.getElementById('nextPage').disabled = !data.hasNextPage;
+
+
+                    document.querySelectorAll('.add-to-cart').forEach(button => {
+                        button.addEventListener('click', addToCart);
+                    });
+                    document.querySelectorAll('.view-details').forEach(button => {
+                        button.addEventListener('click', viewDetails);
+                    });
                 } else {
                     console.error('Error en la respuesta del servidor:', data.error);
                 }
             } catch (error) {
                 console.error('Error al obtener los productos:', error);
+            }
+        }
+
+        async function addToCart(event) {
+            const productId = event.target.closest('li').getAttribute('data-id');
+            const cartId = '664bfc626893a7077351bced'; //  dejo este Id de carrito por el momento 
+            const quantity = 1;
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/carts/${cartId}/products/${productId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ quantity })
+                });
+
+                if (response.ok) {
+                    console.log('Producto agregado al carrito exitosamente');
+                } else {
+                    console.error('Error al agregar el producto al carrito:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error al realizar la solicitud:', error.message);
+            }
+        }
+
+        async function viewDetails(event) {
+            const productId = event.target.closest('li').getAttribute('data-id');
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/products/${productId}`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const product = data.payload;
+                    alert(`Título: ${product.title}\nDescripción: ${product.description}\nPrecio: ${product.price}\nCódigo: ${product.code}\nStock: ${product.stock}\nEstado: ${product.status ? 'Activo' : 'Inactivo'}\nCategoría: ${product.category}`);
+                } else {
+                    console.error('Error al obtener los detalles del producto:', data.error);
+                }
+            } catch (error) {
+                console.error('Error al realizar la solicitud:', error.message);
             }
         }
 
@@ -167,7 +231,7 @@
 
                 if (response.ok) {
                     console.log('Producto creado exitosamente');
-                    fetchProducts(); // Actualizar la lista de productos
+                    fetchProducts();
                 } else {
                     console.error('Error al crear el producto:', response.statusText);
                 }
@@ -182,15 +246,19 @@
             console.log('Nuevo producto recibido:', productData);
 
             const newProductListItem = document.createElement('li');
-            newProductListItem.innerHTML = `<strong>${productData.title}</strong>: ${productData.description} - Precio: ${productData.price}`;
+            newProductListItem.setAttribute('data-id', productData._id);
+            newProductListItem.innerHTML = `<strong>${productData.title}</strong>: ${productData.description} - Precio: ${productData.price}
+                                            <button class="add-to-cart">Agregar al Carrito</button>
+                                            <button class="view-details">Ver Detalles</button>`;
 
             const productList = document.getElementById('productList');
             productList.appendChild(newProductListItem);
+
+
+            newProductListItem.querySelector('.add-to-cart').addEventListener('click', addToCart);
+            newProductListItem.querySelector('.view-details').addEventListener('click', viewDetails);
         });
     </script>
 </body>
+
 </html>
-
-
-
-

@@ -23,7 +23,6 @@ app.use(bodyParser.json());
 app.engine('handlebars', exphbs.engine());
 app.set('view engine', 'handlebars');
 app.set('views', path.join(__dirname, 'views'));
-
 app.use("/", viewsRouter);
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -40,22 +39,22 @@ mongoose.connect(mongoDBUrl, { useNewUrlParser: true, useUnifiedTopology: true }
 // Rutas para Productos
 app.get('/api/products', async (req, res) => {
     try {
-        const { page = 1, limit = 10, sort, query } = req.query;
+        const { page = 1, limit = 5, sort, query } = req.query;
 
-      
+        // dejo las opciones de paginacion 
         const options = {
             page: parseInt(page),
             limit: parseInt(limit),
             sort: sort ? { price: sort === 'asc' ? 1 : -1 } : undefined
         };
 
-        
+        // se realiza la busqueda 
         const searchQuery = query ? { category: new RegExp(query, 'i') } : {};
 
-       
+        // obtengo los productos paginados con filtros 
         const products = await Product.paginate(searchQuery, options);
 
-        
+        // configuro la respuesta 
         const response = {
             status: 'success',
             payload: products.docs,
@@ -134,56 +133,6 @@ app.delete('/api/products/:pid', async (req, res) => {
 });
 
 // Rutas para Carritos
-app.post('/api/carts', async (req, res) => {
-    try {
-        const newCart = new Cart(req.body);
-        const savedCart = await newCart.save();
-        const populatedCart = await Cart.findById(savedCart._id).populate('products.product').lean().exec();
-
-        res.status(201).json({
-            status: 'success',
-            message: 'Carrito creado exitosamente',
-            payload: populatedCart
-        });
-    } catch (error) {
-        console.error('Error al crear el carrito:', error);
-        res.status(500).json({ status: 'error', error: 'Error interno del servidor' });
-    }
-});
-
-app.get('/api/carts/:cid', async (req, res) => {
-    try {
-        const cart = await Cart.findById(req.params.cid).populate('products.product');
-        if (cart) {
-            res.status(200).json({ status: 'success', payload: cart });
-        } else {
-            res.status(404).json({ status: 'error', error: `No se encontró ningún carrito con ID-${req.params.cid}` });
-        }
-    } catch (error) {
-        console.error('Error al obtener el carrito:', error);
-        res.status(500).json({ status: 'error', error: 'Error interno del servidor' });
-    }
-});
-
-app.delete('/api/carts/:cid', async (req, res) => {
-    try {
-        const cart = await Cart.findById(req.params.cid);
-        if (cart) {
-            cart.products = [];
-            await cart.save();
-            res.json({ status: 'success', message: `Todos los productos del carrito con ID-${req.params.cid} han sido eliminados` });
-        } else {
-            res.status(404).json({ status: 'error', error: `No se encontró ningún carrito con ID-${req.params.cid}` });
-        }
-    } catch (error) {
-        console.error('Error al eliminar los productos del carrito:', error);
-        res.status(500).json({ status: 'error', error: 'Error interno del servidor' });
-    }
-});
-
-
-//Rutas para manejar los Productos del carrito 
-
 app.post('/api/carts/:cid/products/:pid', async (req, res) => {
     try {
         const cart = await Cart.findById(req.params.cid);
@@ -243,6 +192,36 @@ app.delete('/api/carts/:cid/products/:pid', async (req, res) => {
     }
 });
 
+app.delete('/api/carts/:cid', async (req, res) => {
+    try {
+        const cart = await Cart.findById(req.params.cid);
+        if (cart) {
+            cart.products = [];
+            await cart.save();
+            res.json({ status: 'success', message: `Todos los productos del carrito con ID-${req.params.cid} han sido eliminados` });
+        } else {
+            res.status(404).json({ status: 'error', error: `No se encontró ningún carrito con ID-${req.params.cid}` });
+        }
+    } catch (error) {
+        console.error('Error al eliminar los productos del carrito:', error);
+        res.status(500).json({ status: 'error', error: 'Error interno del servidor' });
+    }
+});
+
+app.get('/api/carts/:cid', async (req, res) => {
+    try {
+        const cart = await Cart.findById(req.params.cid).populate('products.product');
+        if (cart) {
+            res.status(200).json({ status: 'success', payload: cart });
+        } else {
+            res.status(404).json({ status: 'error', error: `No se encontró ningún carrito con ID-${req.params.cid}` });
+        }
+    } catch (error) {
+        console.error('Error al obtener el carrito:', error);
+        res.status(500).json({ status: 'error', error: 'Error interno del servidor' });
+    }
+});
+
 // Rutas para Mensajes
 app.post('/api/mensajes', async (req, res) => {
     try {
@@ -269,12 +248,12 @@ app.get('/api/mensajes', async (req, res) => {
 socketServer.on('connection', (socket) => {
     console.log('Nuevo cliente conectado al chat');
 
-    // Manejo de mensajes de chat
+   
     socket.on('chatMessage', async (msg) => {
         try {
-            const message = new Message({ message: msg, user: 'Usuario' }); // Ajusta según tus necesidades
+            const message = new Message({ message: msg, user: 'Usuario' }); 
             const savedMessage = await message.save();
-            socketServer.emit('message', { user: 'Usuario', message: msg }); // Emitir el mensaje a todos los clientes conectados
+            socketServer.emit('message', { user: 'Usuario', message: msg }); 
         } catch (error) {
             console.error('Error al guardar el mensaje:', error);
         }
@@ -287,6 +266,22 @@ socketServer.on('connection', (socket) => {
     socket.on('error', (error) => {
         console.error('Error en la conexión del socket:', error);
     });
+});
+
+app.get('/cart', async (req, res) => {
+    const cartId = '664bfc626893a7077351bced'; // dejo este Id de carrito por el momento 
+    try {
+        const cart = await Cart.findById(cartId).populate('products.product');
+        
+        if (cart) {
+            res.render('cart', { cart: cart.toObject() });
+        } else {
+            res.status(404).json({ status: 'error', error: `No se encontró ningún carrito con ID-${cartId}` });
+        }
+    } catch (error) {
+        console.error('Error al obtener el carrito:', error);
+        res.status(500).json({ status: 'error', error: 'Error interno del servidor' });
+    }
 });
 
 server.listen(PORT, () => {
