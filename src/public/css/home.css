@@ -230,3 +230,19 @@ form button:hover {
   margin-left: 20px;
   margin-top: 300px;
 }
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1em;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.welcome p {
+  margin: 0;
+}
+
+form {
+  margin: 0;
+}

@@ -7,11 +7,14 @@
     "start": "node src/app.js"
   },
   "dependencies": {
+    "cookie-parser": "^1.4.6",
     "express": "^4.19.2",
     "express-handlebars": "^7.1.2",
+    "express-session": "^1.18.0",
     "handlebars": "^4.7.8",
     "mongoose": "^8.4.0",
     "mongoose-paginate-v2": "^1.8.1",
+    "session-file-store": "^1.5.0",
     "socket.io": "^4.7.5"
   }
 }

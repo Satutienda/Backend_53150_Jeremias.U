@@ -9,6 +9,14 @@
 </head>
 
 <body>
+    <div class="header">
+        <div class="welcome">
+            <p>Bienvenido, {{user.first_name}} {{user.last_name}} ({{user.email}})</p>
+        </div>
+        <form action="/logout" method="POST">
+            <button type="submit">Cerrar Sesión</button>
+        </form>
+    </div>
     <div>
         <h1>Lista de Productos en Tiempo Real</h1>
         <div>
@@ -262,3 +270,4 @@
 </body>
 
 </html>
+

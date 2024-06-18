@@ -9,7 +9,9 @@ const Cart = require('../src/dao/models/carts');
 const Message = require('../src/dao/models/messages');
 const viewsRouter = require('../src/routes/views.routes.js');
 const path = require('path');
-
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const FileStore = require("session-file-store")(session);
 
 const app = express();
 const server = http.createServer(app);
@@ -17,7 +19,21 @@ const socketServer = socketIO(server);
 
 const PORT = process.env.PORT || 8080;
 
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cookieParser());
+app.use(session({
+    store: new FileStore({
+        path: path.join(__dirname, 'session'),
+        ttl: 100,
+        retries: 0
+    }),
+    secret: 'secret-key',
+    resave: false,
+    saveUninitialized: true,
+    
+}));
 
 // Configuración de Handlebars
 app.engine('handlebars', exphbs.engine());
@@ -28,7 +44,7 @@ app.use("/", viewsRouter);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Conectar a MongoDB
-const mongoDBUrl = "mongodb+srv://jerbri115:66wUqQb%3Agg5XQb8@coder.ny4cphv.mongodb.net/ecommerce"
+const mongoDBUrl = process.env.MONGODB_URL || "mongodb+srv://jerbri115:66wUqQb%3agg5XQb8@coder.ny4cphv.mongodb.net/ecommerce";
 
 mongoose.connect(mongoDBUrl, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => {
@@ -41,20 +57,16 @@ app.get('/api/products', async (req, res) => {
     try {
         const { page = 1, limit = 5, sort, query } = req.query;
 
-        // dejo las opciones de paginacion 
         const options = {
             page: parseInt(page),
             limit: parseInt(limit),
             sort: sort ? { price: sort === 'asc' ? 1 : -1 } : undefined
         };
 
-        // se realiza la busqueda 
         const searchQuery = query ? { category: new RegExp(query, 'i') } : {};
 
-        // obtengo los productos paginados con filtros 
         const products = await Product.paginate(searchQuery, options);
 
-        // configuro la respuesta 
         const response = {
             status: 'success',
             payload: products.docs,
@@ -248,12 +260,11 @@ app.get('/api/mensajes', async (req, res) => {
 socketServer.on('connection', (socket) => {
     console.log('Nuevo cliente conectado al chat');
 
-   
     socket.on('chatMessage', async (msg) => {
         try {
-            const message = new Message({ message: msg, user: 'Usuario' }); 
+            const message = new Message({ message: msg, user: 'Usuario' });
             const savedMessage = await message.save();
-            socketServer.emit('message', { user: 'Usuario', message: msg }); 
+            socketServer.emit('message', { user: 'Usuario', message: msg });
         } catch (error) {
             console.error('Error al guardar el mensaje:', error);
         }
@@ -287,4 +298,5 @@ app.get('/cart', async (req, res) => {
 server.listen(PORT, () => {
     console.log(`Servidor Express escuchando en el puerto ${PORT}`);
 });
+
 

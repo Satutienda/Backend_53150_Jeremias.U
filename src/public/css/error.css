@@ -1,0 +1,19 @@
+/* public/css/error.css */
+.error-container {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.error-container h1 {
+    font-size: 2em;
+    color: red;
+}
+
+.error-container p {
+    font-size: 1.2em;
+}
+
+.error-container a {
+    text-decoration: none;
+    color: blue;
+}
